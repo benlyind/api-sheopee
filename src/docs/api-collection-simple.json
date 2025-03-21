@@ -1,0 +1,882 @@
+{
+  "info": {
+    "name": "API Shopee Collection",
+    "description": "Koleksi API untuk aplikasi Shopee dengan autentikasi JWT dan validasi relasi antar tabel",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.5.0"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "API untuk autentikasi pengguna dengan JWT dan validasi token",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"Nama Lengkap\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Mendaftarkan pengguna baru"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login pengguna"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Mendapatkan informasi pengguna saat ini"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Memperbaharui token"
+          }
+        },
+        {
+          "name": "Token (Alternatif)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "token"]
+            },
+            "description": "Mendapatkan token JWT (alternatif)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "API untuk mengelola produk",
+      "item": [
+        {
+          "name": "Get Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?store_id={{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "store_id",
+                  "value": "{{storeId}}"
+                }
+              ]
+            },
+            "description": "Mendapatkan semua produk berdasarkan store_id"
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": \"{{storeId}}\",\n  \"productId\": \"prod-001\",\n  \"name\": \"Nama Produk\",\n  \"description\": \"Deskripsi Produk\",\n  \"variants\": [\n    {\n      \"variantId\": \"var-001\",\n      \"name\": \"Nama Varian\",\n      \"price\": 100000,\n      \"isActive\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Membuat produk baru dengan ID dari Shopee"
+          }
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            },
+            "description": "Mendapatkan detail produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nama Produk Baru\",\n  \"description\": \"Deskripsi Produk Baru\",\n  \"variants\": [\n    {\n      \"variantId\": \"var-001\",\n      \"name\": \"Nama Varian Baru\",\n      \"price\": 150000,\n      \"isActive\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            },
+            "description": "Memperbarui produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            },
+            "description": "Menghapus produk berdasarkan ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Variants",
+      "description": "API untuk mengelola varian produk",
+      "item": [
+        {
+          "name": "Get Product Variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-variants?product_id={{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-variants"],
+              "query": [
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}"
+                }
+              ]
+            },
+            "description": "Mendapatkan semua varian produk berdasarkan product_id"
+          }
+        },
+        {
+          "name": "Create Product Variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"variantId\": \"var-002\",\n  \"name\": \"Nama Varian Baru\",\n  \"price\": 120000,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/product-variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-variants"]
+            },
+            "description": "Membuat varian produk baru dengan ID dari Shopee"
+          }
+        },
+        {
+          "name": "Get Product Variant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-variants/{{variantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-variants", "{{variantId}}"]
+            },
+            "description": "Mendapatkan detail varian produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Product Variant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nama Varian Baru\",\n  \"price\": 150000,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/product-variants/{{variantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-variants", "{{variantId}}"]
+            },
+            "description": "Memperbarui varian produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Product Variant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-variants/{{variantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-variants", "{{variantId}}"]
+            },
+            "description": "Menghapus varian produk berdasarkan ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Templates",
+      "description": "API untuk mengelola template pengiriman",
+      "item": [
+        {
+          "name": "Get Delivery Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery-templates?store_id={{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery-templates"],
+              "query": [
+                {
+                  "key": "store_id",
+                  "value": "{{storeId}}"
+                }
+              ]
+            },
+            "description": "Mendapatkan semua template pengiriman berdasarkan store_id"
+          }
+        },
+        {
+          "name": "Create Delivery Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": \"{{storeId}}\",\n  \"name\": \"Template Pengiriman\",\n  \"content\": \"Terima kasih telah berbelanja di toko kami. Berikut adalah detail pesanan Anda: {{orderDetails}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery-templates"]
+            },
+            "description": "Membuat template pengiriman baru"
+          }
+        },
+        {
+          "name": "Get Delivery Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery-templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery-templates", "{{templateId}}"]
+            },
+            "description": "Mendapatkan detail template pengiriman berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Delivery Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Template Pengiriman Baru\",\n  \"content\": \"Terima kasih telah berbelanja di toko kami. Berikut adalah detail pesanan Anda: {{orderDetails}}. Silakan hubungi kami jika ada pertanyaan.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery-templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery-templates", "{{templateId}}"]
+            },
+            "description": "Memperbarui template pengiriman berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Delivery Template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery-templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery-templates", "{{templateId}}"]
+            },
+            "description": "Menghapus template pengiriman berdasarkan ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stores",
+      "description": "API untuk mengelola toko",
+      "item": [
+        {
+          "name": "Get Stores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            },
+            "description": "Mendapatkan semua toko milik user yang terautentikasi"
+          }
+        },
+        {
+          "name": "Create Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": \"store-001\",\n  \"name\": \"Nama Toko\",\n  \"description\": \"Deskripsi Toko\",\n  \"logoUrl\": \"https://example.com/logo.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores"]
+            },
+            "description": "Membuat toko baru dengan ID dari Shopee"
+          }
+        },
+        {
+          "name": "Get Store",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storeId}}"]
+            },
+            "description": "Mendapatkan detail toko berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Store",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nama Toko Baru\",\n  \"description\": \"Deskripsi Toko Baru\",\n  \"logoUrl\": \"https://example.com/new-logo.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storeId}}"]
+            },
+            "description": "Memperbarui toko berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Store",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stores", "{{storeId}}"]
+            },
+            "description": "Menghapus toko berdasarkan ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "API untuk mengelola pelanggan",
+      "item": [
+        {
+          "name": "Get Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers?store_id={{storeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers"],
+              "query": [
+                {
+                  "key": "store_id",
+                  "value": "{{storeId}}"
+                }
+              ]
+            },
+            "description": "Mendapatkan semua pelanggan berdasarkan store_id"
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": \"{{storeId}}\",\n  \"contactId\": \"628123456789\",\n  \"contactType\": \"whatsapp\",\n  \"name\": \"Nama Pelanggan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers"]
+            },
+            "description": "Membuat pelanggan baru"
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "{{customerId}}"]
+            },
+            "description": "Mendapatkan detail pelanggan berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactId\": \"628123456789\",\n  \"contactType\": \"whatsapp\",\n  \"name\": \"Nama Pelanggan Baru\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "{{customerId}}"]
+            },
+            "description": "Memperbarui pelanggan berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "customers", "{{customerId}}"]
+            },
+            "description": "Menghapus pelanggan berdasarkan ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Delivery",
+      "description": "API untuk mengecek dan mengelola data product delivery",
+      "item": [
+        {
+          "name": "Check Product Delivery",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-delivery?store_id={{storeId}}&product_id={{productId}}&variant_id={{variantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-delivery"],
+              "query": [
+                {
+                  "key": "store_id",
+                  "value": "{{storeId}}"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "description": "Opsional - Jika diberikan, akan mencari berdasarkan product_id"
+                },
+                {
+                  "key": "variant_id",
+                  "value": "{{variantId}}",
+                  "description": "Opsional - Jika diberikan, akan mencari berdasarkan variant_id"
+                }
+              ]
+            },
+            "description": "Mengecek data product delivery berdasarkan store_id, product_id (opsional), dan variant_id (opsional). Jika variant_id tidak diberikan tetapi product_id diberikan, akan mencari konfigurasi dengan variant_id null."
+          }
+        },
+        {
+          "name": "Create/Update Product Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": \"{{storeId}}\",\n  \"productId\": \"{{productId}}\",\n  \"variantId\": \"{{variantId}}\",\n  \"type\": \"whatsapp\",\n  \"status\": \"active\",\n  \"accountData\": \"628123456789\",\n  \"templateId\": \"{{templateId}}\",\n  \"useAi\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/product-delivery",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-delivery"]
+            },
+            "description": "Membuat atau memperbarui konfigurasi pengiriman produk. Jika konfigurasi dengan kombinasi store_id, product_id, dan variant_id sudah ada, akan diperbarui. Jika belum ada, akan dibuat baru. Parameter productId dan variantId bersifat opsional."
+          }
+        },
+        {
+          "name": "Get Product Delivery Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-delivery/{{configId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-delivery", "{{configId}}"]
+            },
+            "description": "Mendapatkan detail konfigurasi pengiriman produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Update Product Delivery Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"whatsapp\",\n  \"status\": \"active\",\n  \"accountData\": \"628123456789\",\n  \"templateId\": \"{{templateId}}\",\n  \"useAi\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/product-delivery/{{configId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-delivery", "{{configId}}"]
+            },
+            "description": "Memperbarui konfigurasi pengiriman produk berdasarkan ID"
+          }
+        },
+        {
+          "name": "Delete Product Delivery Config",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/product-delivery/{{configId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "product-delivery", "{{configId}}"]
+            },
+            "description": "Menghapus konfigurasi pengiriman produk berdasarkan ID"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "storeId",
+      "value": "store-001",
+      "type": "string",
+      "description": "ID toko dari Shopee"
+    },
+    {
+      "key": "productId",
+      "value": "prod-001",
+      "type": "string",
+      "description": "ID produk dari Shopee"
+    },
+    {
+      "key": "variantId",
+      "value": "var-001",
+      "type": "string",
+      "description": "ID varian dari Shopee"
+    },
+    {
+      "key": "customerId",
+      "value": "your_customer_id_here",
+      "type": "string",
+      "description": "UUID pelanggan yang dihasilkan oleh sistem"
+    },
+    {
+      "key": "configId",
+      "value": "your_config_id_here",
+      "type": "string",
+      "description": "UUID konfigurasi pengiriman produk yang dihasilkan oleh sistem"
+    },
+    {
+      "key": "templateId",
+      "value": "your_template_id_here",
+      "type": "string",
+      "description": "UUID template pengiriman yang dihasilkan oleh sistem"
+    }
+  ]
+}

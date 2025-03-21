@@ -9,17 +9,34 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/core": "^0.3.42",
+    "@langchain/openai": "^0.4.5",
+    "@pinecone-database/pinecone": "^5.1.1",
+    "@prisma/client": "^6.5.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/uuid": "^10.0.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "langchain": "^0.3.19",
+    "neo4j-driver": "^5.28.1",
+    "next": "15.2.3",
+    "pg": "^8.14.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.2.3"
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
-    "@eslint/eslintrc": "^3"
+    "prisma": "^6.5.0",
+    "typescript": "^5"
   }
 }
