@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Coba ambil data user dari Supabase
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('id, email, full_name')
+      .select('id, email, full_name, stores(id, name)')
       .eq('email', payload.email)
       .single();
 
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         id: payload.userId,
         email: payload.email,
         fullName: userData?.full_name || null,
+        stores: userData?.stores || [],
       },
     });
   } catch (error) {

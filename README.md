@@ -1,3 +1,90 @@
+# API Shopee dengan Integrasi LangChain
+
+Aplikasi ini menggunakan LangChain untuk melakukan trace, debug, dan monitoring aplikasi AI.
+
+## Fitur Integrasi LangChain
+
+1. **Tracing**: Melacak semua operasi LangChain untuk debugging dan analisis
+2. **Monitoring**: Memantau performa dan hasil dari model AI
+3. **Debugging**: Memudahkan proses debugging dengan melihat alur eksekusi
+
+## Konfigurasi LangSmith
+
+Untuk mengaktifkan tracing dan monitoring, tambahkan konfigurasi berikut di file `.env`:
+
+```
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_API_KEY="your_api_key_here"
+LANGSMITH_PROJECT="your_project_name"
+```
+
+## Komponen Utama
+
+### 1. LangChain Tracer
+
+File `src/lib/langchain-tracer.ts` berisi konfigurasi untuk tracing LangChain:
+
+- Inisialisasi LangSmith client
+- Membuat tracer untuk LangChain
+- Fungsi untuk membuat callback handler dengan metadata dan tag
+
+### 2. LangChain Monitor
+
+File `src/lib/langchain-monitor.ts` berisi utilitas untuk monitoring dan debugging:
+
+- Mendapatkan semua runs dari project
+- Mendapatkan detail run berdasarkan run_id
+- Mendapatkan runs berdasarkan tag atau metadata
+- Mendapatkan statistik runs
+- Mendapatkan feedback dari runs
+
+### 3. API Endpoint untuk Monitoring
+
+File `src/app/api/ai/monitor/route.ts` menyediakan endpoint untuk mengakses data monitoring:
+
+- GET `/api/ai/monitor?type=stats`: Mendapatkan statistik monitoring
+- GET `/api/ai/monitor?type=runs`: Mendapatkan daftar runs
+- GET `/api/ai/monitor?type=runs&runId=xxx`: Mendapatkan detail run
+- GET `/api/ai/monitor?type=runs&tag=xxx`: Mendapatkan runs berdasarkan tag
+- GET `/api/ai/monitor?type=runs&metadataKey=xxx&metadataValue=yyy`: Mendapatkan runs berdasarkan metadata
+
+## Penggunaan
+
+### Tracing dalam Kode
+
+Untuk mengaktifkan tracing dalam kode, gunakan callback handler dari `langchain-tracer.ts`:
+
+```typescript
+import { createTracingCallbacks } from "@/lib/langchain-tracer";
+
+// Buat tracing callbacks
+const callbacks = createTracingCallbacks("operation_name", {
+  // Metadata tambahan
+  userId: "user123",
+  operation: "chat",
+});
+
+// Gunakan callbacks dalam model LLM
+const llm = new ChatOpenAI({
+  openAIApiKey: process.env.OPENAI_API_KEY,
+  modelName: "gpt-4o",
+  temperature: 0.7,
+  callbacks, // Tambahkan callbacks di sini
+});
+```
+
+### Monitoring
+
+Untuk melihat data monitoring, akses endpoint `/api/ai/monitor` dengan parameter yang sesuai.
+
+## Manfaat
+
+1. **Transparansi**: Melihat semua operasi AI secara transparan
+2. **Analisis Performa**: Menganalisis performa model AI
+3. **Debugging Mudah**: Memudahkan proses debugging dengan melihat alur eksekusi
+4. **Peningkatan Kualitas**: Meningkatkan kualitas respons AI dengan analisis data
+
 # API Shopee - Detailed Documentation
 
 ## Project Overview

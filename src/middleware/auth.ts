@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { verifyToken, User } from '@/lib/auth';
+import { handleCors } from '@/middleware';
 
 export interface AuthenticatedRequest extends NextRequest {
   user: User;
@@ -58,6 +59,12 @@ export async function authenticateRequest(
 
 export function withAuth(handler: (req: AuthenticatedRequest) => Promise<NextResponse>) {
   return async (request: NextRequest) => {
+    // Skip authentication for OPTIONS requests
+    const corsResponse = handleCors(request);
+    if (corsResponse) {
+      return corsResponse;
+    }
+
     const { authenticated, request: authenticatedRequest, error } = await authenticateRequest(request);
 
     if (!authenticated) {

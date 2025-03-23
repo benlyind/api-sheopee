@@ -1,7 +1,63 @@
 import { ChatOpenAI } from "@langchain/openai";
 
 /**
+ * Menghasilkan tag utama untuk FAQ menggunakan AI
+ * @param question Pertanyaan FAQ
+ * @param answer Jawaban FAQ
+ * @returns Tag utama (single string)
+ */
+export const generateFAQTag = async (question: string, answer: string): Promise<string> => {
+  try {
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      console.error("OpenAI API key tidak ditemukan");
+      return "";
+    }
+    
+    const llm = new ChatOpenAI({
+      openAIApiKey: openaiApiKey,
+      modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
+      temperature: 0.2
+    });
+    
+    const prompt = `
+    Berdasarkan pertanyaan dan jawaban FAQ berikut, hasilkan tag utama yang paling relevan. 
+    Tag harus berupa kata kunci pendek yang menggambarkan topik utama dari FAQ.
+    
+    Panduan untuk tag:
+    - Gunakan kata kunci yang spesifik dan relevan dengan konten FAQ
+    - Gunakan kata benda tunggal jika memungkinkan (misalnya "pengiriman" bukan "pengiriman-pengiriman")
+    - Gunakan kata kunci yang konsisten untuk topik yang sama (misalnya selalu gunakan "pembayaran" untuk hal terkait pembayaran)
+    - Hindari kata kunci yang terlalu umum seperti "informasi" atau "bantuan"
+    - Prioritaskan kata kunci yang mungkin akan dicari oleh pengguna
+    
+    Contoh tag yang baik:
+    - Untuk pertanyaan tentang pengiriman: "pengiriman" atau "ekspedisi"
+    - Untuk pertanyaan tentang pembayaran: "pembayaran" atau "transfer"
+    - Untuk pertanyaan tentang produk: "garansi" atau "spesifikasi"
+    
+    Penting: Pastikan untuk konsisten dalam memberikan tag untuk pertanyaan yang serupa.
+    
+    Pertanyaan: "${question}"
+    Jawaban: "${answer}"
+    
+    Kembalikan hanya satu tag utama tanpa penjelasan tambahan.
+    Tag:
+    `;
+    
+    const response = await llm.invoke(prompt);
+    const tag = response.content.toString().trim().toLowerCase();
+    
+    return tag;
+  } catch (error) {
+    console.error("Error generating FAQ tag:", error);
+    return "";
+  }
+};
+
+/**
  * Menghasilkan tags untuk FAQ menggunakan AI
+ * @deprecated Use generateFAQTag instead for the new schema
  * @param question Pertanyaan FAQ
  * @param answer Jawaban FAQ
  * @returns Array of tags
@@ -21,28 +77,57 @@ export const generateFAQTags = async (question: string, answer: string): Promise
     });
     
     const prompt = `
-    Berdasarkan pertanyaan dan jawaban FAQ berikut, hasilkan 3-5 tag yang relevan. 
-    Tag harus berupa kata kunci pendek yang menggambarkan topik utama dari FAQ.
+    Analisis pertanyaan dan jawaban FAQ berikut, lalu hasilkan 3-5 tag yang paling relevan.
+    Tag harus berupa kata kunci pendek dalam Bahasa Indonesia yang menggambarkan topik-topik utama dari FAQ.
     
-    Panduan untuk tags:
-    - Gunakan kata kunci yang spesifik dan relevan dengan konten FAQ
-    - Gunakan kata benda tunggal jika memungkinkan (misalnya "pengiriman" bukan "pengiriman-pengiriman")
-    - Gunakan kata kunci yang konsisten untuk topik yang sama (misalnya selalu gunakan "pembayaran" untuk hal terkait pembayaran)
-    - Hindari kata kunci yang terlalu umum seperti "informasi" atau "bantuan"
-    - Prioritaskan kata kunci yang mungkin akan dicari oleh pengguna
+    PANDUAN UNTUK TAGS:
+    1. Setiap tag harus:
+       - Berupa kata benda tunggal
+       - Menggunakan huruf kecil semua
+       - Tidak mengandung spasi (gunakan "-" jika perlu)
+       - Spesifik dan relevan dengan konten
+       - Mudah dicari oleh pengguna
     
-    Contoh tags yang baik:
-    - Untuk pertanyaan tentang pengiriman: "pengiriman", "ongkir", "ekspedisi", "estimasi", "tracking"
-    - Untuk pertanyaan tentang pembayaran: "pembayaran", "transfer", "e-wallet", "kartu kredit", "cicilan"
-    - Untuk pertanyaan tentang produk: "garansi", "spesifikasi", "ketersediaan", "stok", "kualitas"
+    2. Hindari:
+       - Kata yang terlalu umum (misal: "informasi", "bantuan", "cara","minimal")
+       - Kata kerja
+       - Kata sifat
+       - Duplikasi makna
     
-    Penting: Pastikan untuk konsisten dalam memberikan tag untuk pertanyaan yang serupa.
+    3. Urutan tags:
+       - Tag pertama harus yang paling relevan/utama
+       - Diikuti tag pendukung yang masih relevan
     
-    Pertanyaan: "${question}"
-    Jawaban: "${answer}"
+    KATA KUNCI:
+    - PELACAKAN
+    - PENGIRIMAN
+    - PEMBAYARAN
+    - PRODUK
+    - AKUN
+    - PENGEMBALIAN
+    - DISKON
+    - PROMO
+    - GARANSI
+    - KETERSEDIAAN
+    - STOK
     
-    Kembalikan hanya daftar tag yang dipisahkan koma, tanpa penjelasan tambahan.
-    Tags:
+    CONTOH FORMAT OUTPUT:
+    Untuk FAQ tentang cara melacak pesanan:
+    pelacakan, pesanan, pengiriman, resi, ekspedisi
+    
+    Untuk FAQ tentang metode pembayaran:
+    pembayaran, transfer, e-wallet, bank, kartu-kredit
+    
+    Untuk FAQ tentang pengembalian produk:
+    refund, pengembalian, retur, garansi, produk
+    
+    PERTANYAAN:
+    "${question}"
+    
+    JAWABAN:
+    "${answer}"
+    
+    BERIKAN HANYA DAFTAR TAG YANG DIPISAHKAN KOMA (3-5 TAG), TANPA PENJELASAN ATAU TEKS TAMBAHAN:
     `;
     
     const response = await llm.invoke(prompt);
@@ -52,10 +137,23 @@ export const generateFAQTags = async (question: string, answer: string): Promise
     const tags = tagsText
       .split(',')
       .map(tag => tag.trim().toLowerCase())
-      .filter(tag => tag.length > 0);
+      .filter(tag => tag.length > 0 && tag !== 'tags' && !tag.includes(':'));
     
-    // Batasi jumlah tag
-    return tags.slice(0, 5);
+    // Batasi jumlah tag dan hilangkan duplikat
+    const uniqueTags = [...new Set(tags)].slice(0, 5);
+    
+    // Validasi format tags
+    const validTags = uniqueTags.filter(tag => {
+      // Tag harus berupa string yang valid
+      if (typeof tag !== 'string' || tag.length === 0) return false;
+      
+      // Tag tidak boleh mengandung karakter khusus kecuali "-"
+      if (!/^[a-z0-9-]+$/.test(tag)) return false;
+      
+      return true;
+    });
+    
+    return validTags;
   } catch (error) {
     console.error("Error generating FAQ tags:", error);
     return [];
@@ -120,12 +218,12 @@ export const generateFAQCategory = async (question: string, answer: string): Pro
 };
 
 /**
- * Menghasilkan tags dan kategori untuk FAQ menggunakan AI
+ * Menghasilkan tag dan kategori untuk FAQ menggunakan AI
  * @param question Pertanyaan FAQ
  * @param answer Jawaban FAQ
- * @returns Object berisi tags dan kategori
+ * @returns Object berisi tag dan kategori
  */
-export const generateFAQMetadata = async (question: string, answer: string): Promise<{ tags: string[], category: string }> => {
+export const generateFAQMetadata = async (question: string, answer: string): Promise<{ tags: string[], category: string, tag: string }> => {
   try {
     // Generate tags dan kategori secara paralel untuk kinerja yang lebih baik
     const [tags, category] = await Promise.all([
@@ -133,9 +231,15 @@ export const generateFAQMetadata = async (question: string, answer: string): Pro
       generateFAQCategory(question, answer)
     ]);
     
-    return { tags, category };
+    // Return both single tag and multiple tags for compatibility
+    // Single tag diambil dari tag pertama jika ada
+    return { 
+      tag: tags.length > 0 ? tags[0] : "", 
+      tags: tags,
+      category 
+    };
   } catch (error) {
     console.error("Error generating FAQ metadata:", error);
-    return { tags: [], category: "general" };
+    return { tag: "", tags: [], category: "general" };
   }
 };

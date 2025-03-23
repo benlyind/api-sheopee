@@ -1,0 +1,602 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+    "name": "AI Trigger API",
+    "description": "API untuk mengelola AI Trigger",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get AI Trigger Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"message\": \"Berapa harga produk ini?\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ai/chat/trigger",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "chat", "trigger"]
+        },
+        "description": "Mendapatkan respons otomatis dari AI trigger berdasarkan pesan"
+      },
+      "response": [
+        {
+          "name": "Success Response - Intent Match",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Berapa harga produk ini?\",\n    \"userId\": \"your-user-id-here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/chat/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "chat", "trigger"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"response\": \"Produk Laptop Asus tersedia dengan harga Rp 8.500.000.\",\n    \"trigger\": {\n        \"id\": 1,\n        \"intent\": \"PRODUCT_INQUIRY\",\n        \"keywords\": [\"harga\", \"berapa\", \"price\"]\n    },\n    \"matchType\": \"intent\"\n}"
+        },
+        {
+          "name": "Success Response - Keyword Match",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Saya mau tanya harga produk ini\",\n    \"userId\": \"your-user-id-here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/chat/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "chat", "trigger"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"response\": \"Produk Laptop Asus tersedia dengan harga Rp 8.500.000.\",\n    \"trigger\": {\n        \"id\": 1,\n        \"intent\": \"PRODUCT_INQUIRY\",\n        \"keywords\": [\"harga\", \"berapa\", \"price\"]\n    },\n    \"matchType\": \"keyword\"\n}"
+        },
+        {
+          "name": "Error Response - No Match",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"Selamat pagi\",\n    \"userId\": \"your-user-id-here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/chat/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "chat", "trigger"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": false,\n    \"error\": \"Tidak ada AI trigger yang cocok dengan pesan\",\n    \"intent\": \"GREETING\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All AI Triggers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ai/trigger",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "trigger"]
+        },
+        "description": "Mendapatkan semua AI trigger milik user yang terautentikasi"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"triggers\": [\n        {\n            \"id\": 1,\n            \"intent\": \"PRODUCT_INQUIRY\",\n            \"keywords\": [\"harga\", \"berapa\", \"price\"],\n            \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n        },\n        {\n            \"id\": 2,\n            \"intent\": \"SHIPPING_INQUIRY\",\n            \"keywords\": [\"kirim\", \"ongkir\", \"shipping\"],\n            \"template\": \"Pengiriman ke {{location}} membutuhkan waktu sekitar {{duration}} hari.\"\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create AI Trigger",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": [\"harga\", \"berapa\", \"price\"],\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ai/trigger",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "trigger"]
+        },
+        "description": "Membuat AI trigger baru"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": [\"harga\", \"berapa\", \"price\"],\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"trigger\": {\n        \"id\": 1,\n        \"intent\": \"PRODUCT_INQUIRY\",\n        \"keywords\": [\"harga\", \"berapa\", \"price\"],\n        \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n    }\n}"
+        },
+        {
+          "name": "Error Response - Invalid Input",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": \"harga, berapa, price\",\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": false,\n    \"error\": \"Parameter keywords harus berupa array\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get AI Trigger by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ai/trigger/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "trigger", "1"]
+        },
+        "description": "Mendapatkan detail AI trigger berdasarkan ID"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "1"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"trigger\": {\n        \"id\": 1,\n        \"intent\": \"PRODUCT_INQUIRY\",\n        \"keywords\": [\"harga\", \"berapa\", \"price\"],\n        \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}.\"\n    }\n}"
+        },
+        {
+          "name": "Error Response - Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "999"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": false,\n    \"error\": \"AI trigger tidak ditemukan\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update AI Trigger",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": [\"harga\", \"berapa\", \"price\", \"cost\"],\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}. Silakan hubungi kami untuk informasi lebih lanjut.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/ai/trigger/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "trigger", "1"]
+        },
+        "description": "Memperbarui AI trigger berdasarkan ID"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": [\"harga\", \"berapa\", \"price\", \"cost\"],\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}. Silakan hubungi kami untuk informasi lebih lanjut.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "1"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"trigger\": {\n        \"id\": 1,\n        \"intent\": \"PRODUCT_INQUIRY\",\n        \"keywords\": [\"harga\", \"berapa\", \"price\", \"cost\"],\n        \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}. Silakan hubungi kami untuk informasi lebih lanjut.\"\n    }\n}"
+        },
+        {
+          "name": "Error Response - Not Found",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"intent\": \"PRODUCT_INQUIRY\",\n    \"keywords\": [\"harga\", \"berapa\", \"price\", \"cost\"],\n    \"template\": \"Produk {{product_name}} tersedia dengan harga {{price}}. Silakan hubungi kami untuk informasi lebih lanjut.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "999"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": false,\n    \"error\": \"AI trigger tidak ditemukan\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete AI Trigger",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ai/trigger/1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ai", "trigger", "1"]
+        },
+        "description": "Menghapus AI trigger berdasarkan ID"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "1"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true,\n    \"message\": \"AI trigger berhasil dihapus\"\n}"
+        },
+        {
+          "name": "Error Response - Not Found",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ai/trigger/999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "trigger", "999"]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": false,\n    \"error\": \"AI trigger tidak ditemukan\"\n}"
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

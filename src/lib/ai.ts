@@ -19,6 +19,10 @@ import {
 } from "@langchain/core/tools";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
+import { ConsoleCallbackHandler } from "@langchain/core/tracers/console";
+import { createTracingCallbacks, createTracingCallbacksWithTags } from "./langchain-tracer";
+import { getWrappedOpenAIClient } from "./langchain-wrapper";
+import { traceable } from "langsmith/traceable";
 
 // Interface untuk konfigurasi AI
 export interface AIConfig {
@@ -28,7 +32,8 @@ export interface AIConfig {
 
 import { 
   FAQDocument, 
-  queryFAQ, 
+  queryFAQ,
+  queryFAQWithCache,
   saveFAQDocument, 
   getFAQDocument, 
   getAllFAQDocuments, 
@@ -37,16 +42,16 @@ import {
 } from './faq';
 
 // Fungsi untuk mendapatkan konfigurasi AI dari database
-export const getAIConfig = async (storeId: string): Promise<AIConfig> => {
+export const getAIConfig = async (userId: string): Promise<AIConfig> => {
   try {
     const { data: config, error } = await supabase
       .from('ai_config')
       .select('*')
-      .eq('store_id', storeId)
+      .eq('user_id', userId)
       .single();
 
     if (error) {
-      console.warn(`Konfigurasi AI untuk toko ${storeId} tidak ditemukan, menggunakan default`);
+      console.warn(`Konfigurasi AI untuk user ${userId} tidak ditemukan, menggunakan default`);
       return {
         systemPrompt: "Anda adalah asisten penjual yang membantu pelanggan dengan pertanyaan mereka tentang produk.",
         customPrompts: {
@@ -193,7 +198,7 @@ class Neo4jChatMessageHistory extends BaseChatMessageHistory {
         { sessionId: this.sessionId, storeId: this.storeId }
       );
       
-      const messageType = message instanceof HumanMessage ? "human" : "ai";
+      const messageType = message instanceof HumanMessage ? "human" : "assistant";
       await session.run(
         `
         MATCH (c:Conversation {sessionId: $sessionId, storeId: $storeId})
@@ -326,10 +331,13 @@ export const createAgentTools = (storeId: string) => {
     }),
     func: async ({ question }) => {
       try {
-        const results = await queryFAQ(storeId, question, 3);
+        // Gunakan fungsi dengan cache untuk kinerja yang lebih baik
+        const results = await queryFAQWithCache(storeId, question, 3);
+        
         if (results.length === 0) {
           return "Tidak ditemukan FAQ yang relevan dengan pertanyaan tersebut.";
         }
+        
         let response = "FAQ yang relevan:\n\n";
         results.forEach((doc, index) => {
           const [faqQuestion, answer] = doc.pageContent.split("\n");
@@ -337,6 +345,7 @@ export const createAgentTools = (storeId: string) => {
         });
         return response;
       } catch (error) {
+        console.error("Error saat mencari FAQ:", error);
         return "Error: Tidak dapat mencari FAQ saat ini.";
       }
     }
@@ -383,19 +392,22 @@ export const createAgentTools = (storeId: string) => {
 };
 
 // Fungsi untuk menganalisis intent dengan LangChain
-export const analyzeIntentWithLangChain = async (message: string): Promise<string> => {
+export const analyzeIntentWithLangChain = traceable(async (message: string): Promise<string> => {
   try {
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey) {
-      console.error("OpenAI API key tidak ditemukan");
-      return "UNKNOWN";
-    }
-    
-    const llm = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
-      modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
-      temperature: 0
-    });
+    // Gunakan wrapped OpenAI client
+    const openai = getWrappedOpenAIClient();
+      
+      const callbacks = createTracingCallbacks("analyze_intent", {
+        message,
+        type: "intent_analysis"
+      });
+      
+      const llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
+        temperature: 0,
+        callbacks
+      });
     
     const prompt = `
     Analisis pesan berikut dan tentukan intent-nya. Pilih salah satu dari kategori berikut:
@@ -417,22 +429,25 @@ export const analyzeIntentWithLangChain = async (message: string): Promise<strin
     console.error("Error analyzing intent with LangChain:", error);
     return "UNKNOWN";
   }
-};
+});
 
 // Fungsi untuk mendeteksi entitas dalam pesan
-export const detectEntities = async (message: string): Promise<Record<string, string>> => {
+export const detectEntities = traceable(async (message: string): Promise<Record<string, string>> => {
   try {
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey) {
-      console.error("OpenAI API key tidak ditemukan");
-      return {};
-    }
-    
-    const llm = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
-      modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
-      temperature: 0
-    });
+    // Gunakan wrapped OpenAI client
+    const openai = getWrappedOpenAIClient();
+      
+      const callbacks = createTracingCallbacks("detect_entities", {
+        message,
+        type: "entity_detection"
+      });
+      
+      const llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
+        temperature: 0,
+        callbacks
+      });
     
     const prompt = `
     Ekstrak entitas berikut dari pesan:
@@ -468,57 +483,86 @@ export const detectEntities = async (message: string): Promise<Record<string, st
     console.error("Error detecting entities:", error);
     return {};
   }
-};
+});
 
 // Fungsi untuk mendapatkan respons AI dengan agent dan memory
-export const getAiResponseWithAgent = async (
+export const getAiResponseWithAgent = traceable(async (
   message: string, 
-  userId: string, 
+  sessionId: string, // ID sesi untuk riwayat chat
   storeId: string,
   promptName: string = "default",
   productId?: string,
   customerId?: string,
-  humanPrompt?: string // Parameter tambahan untuk human prompt
+  humanPrompt?: string, // Parameter tambahan untuk human prompt
+  aiConfig?: AIConfig // Parameter opsional untuk konfigurasi AI
 ): Promise<string> => {
+  // Tambahkan metadata untuk tracing
+  const metadata = {
+    sessionId,
+    storeId,
+    promptName,
+    productId,
+    customerId,
+    messageLength: message.length,
+    timestamp: new Date().toISOString()
+  };
   try {
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey) {
-      console.error("OpenAI API key tidak ditemukan");
-      return "Maaf, konfigurasi AI belum lengkap. Silakan atur API key terlebih dahulu.";
-    }
+      // Gunakan wrapped OpenAI client
+      const openai = getWrappedOpenAIClient();
     
     // Cek apakah AI diaktifkan untuk toko ini
+    let userId: string | undefined;
     try {
       const { data: store, error: storeError } = await supabase
         .from('stores')
-        .select('ai_enabled')
+        .select('ai_enabled, user_id')
         .eq('id', storeId)
         .single();
       
       if (storeError) {
         console.warn(`Tidak dapat menemukan toko dengan ID ${storeId}, melanjutkan tanpa pengecekan AI enabled`);
-      } else if (!store.ai_enabled) {
+      } else if (store && !store.ai_enabled) {
         console.warn(`AI tidak diaktifkan untuk toko ${storeId}, tetapi melanjutkan untuk tujuan pengujian`);
         // Untuk pengujian, kita tetap melanjutkan meskipun AI tidak diaktifkan
         // return "Maaf, fitur AI tidak diaktifkan untuk toko ini.";
+      }
+      
+      // Ambil user_id dari toko untuk digunakan dalam getAIConfig
+      if (store) {
+        userId = store.user_id;
       }
     } catch (error) {
       console.warn(`Error saat memeriksa status AI untuk toko ${storeId}:`, error);
       // Lanjutkan meskipun ada error untuk tujuan pengujian
     }
     
-    // Ambil konfigurasi AI
-    const config = await getAIConfig(storeId);
+    // Ambil konfigurasi AI jika tidak disediakan
+    // Gunakan userId dari toko jika tersedia, jika tidak gunakan sessionId sebagai fallback
+    const config = aiConfig || await getAIConfig(userId || sessionId);
     const prompt = config.customPrompts?.[promptName] || config.systemPrompt;
     
+    const callbacks = createTracingCallbacksWithTags(
+      `chat_${sessionId}`,
+      ["chat", "agent"],
+      {
+        sessionId,
+        storeId,
+        productId,
+        promptName,
+        customerId
+      }
+    );
+    
     const llm = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
+      openAIApiKey: process.env.OPENAI_API_KEY,
       modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
-      temperature: parseFloat(process.env.AI_TEMPERATURE || "0.7")
+      temperature: parseFloat(process.env.AI_TEMPERATURE || "0.7"),
+      callbacks
     });
     
-    const sessionId = productId ? `${userId}-${productId}` : userId;
-    const history = new Neo4jChatMessageHistory(sessionId, storeId);
+    // Buat history dengan sessionId yang diberikan
+    const chatSessionId = productId ? `${sessionId}-${productId}` : sessionId;
+    const history = new Neo4jChatMessageHistory(chatSessionId, storeId);
     
     const memory = new BufferMemory({
       chatHistory: history,
@@ -569,9 +613,10 @@ export const getAiResponseWithAgent = async (
     
     // Gunakan pendekatan dengan ChatOpenAI dan format pesan yang benar
     const llmChain = new ChatOpenAI({
-      openAIApiKey: openaiApiKey,
+      openAIApiKey: process.env.OPENAI_API_KEY,
       modelName: process.env.AI_MODEL_NAME || "gpt-3.5-turbo",
-      temperature: parseFloat(process.env.AI_TEMPERATURE || "0.7")
+      temperature: parseFloat(process.env.AI_TEMPERATURE || "0.7"),
+      callbacks
     });
     
     // Buat array pesan untuk format yang benar
@@ -602,18 +647,45 @@ export const getAiResponseWithAgent = async (
     // Cek apakah pertanyaan terkait dengan FAQ
     let faqContent = "";
     try {
-      // Gunakan searchFAQTool untuk mencari FAQ yang relevan
-      const searchFAQTool = tools.find(tool => tool.name === "search_faq");
-      if (searchFAQTool) {
-        // Gunakan cara yang lebih aman untuk memanggil fungsi
-        const faqResponse = await (searchFAQTool as any).func({ question: message });
-        if (faqResponse && !faqResponse.includes("Tidak ditemukan FAQ")) {
-          faqContent = faqResponse;
-          console.log("FAQ results found, using as context for AI response");
+      console.log(`[DEBUG FAQ] Mencari FAQ untuk storeId: ${storeId}, message: "${message}"`);
+      
+      // Cek apakah AI diaktifkan untuk toko ini
+      const { data: store, error: storeError } = await supabase
+        .from('stores')
+        .select('ai_enabled')
+        .eq('id', storeId)
+        .single();
+      
+      console.log(`[DEBUG FAQ] Status AI toko: ${store?.ai_enabled}, Error: ${storeError ? storeError.message : 'Tidak ada'}`);
+      
+      if (!storeError && store && store.ai_enabled) {
+        console.log(`[DEBUG FAQ] AI diaktifkan untuk toko ${storeId}, mencari FAQ yang relevan...`);
+        
+        // Gunakan searchFAQTool untuk mencari FAQ yang relevan
+        const searchFAQTool = tools.find(tool => tool.name === "search_faq");
+        if (searchFAQTool) {
+          console.log(`[DEBUG FAQ] searchFAQTool ditemukan, memanggil fungsi dengan pertanyaan: "${message}"`);
+          
+          // Gunakan cara yang lebih aman untuk memanggil fungsi
+          const faqResponse = await (searchFAQTool as any).func({ question: message });
+          console.log(`[DEBUG FAQ] Hasil pencarian FAQ: ${faqResponse ? faqResponse.substring(0, 100) + '...' : 'Tidak ada hasil'}`);
+          
+          if (faqResponse && !faqResponse.includes("Tidak ditemukan FAQ")) {
+            console.log(`[DEBUG FAQ] FAQ yang relevan ditemukan, menggunakan sebagai konteks`);
+            faqContent = faqResponse;
+          } else {
+            console.log(`[DEBUG FAQ] Tidak ditemukan FAQ yang relevan`);
+          }
+        } else {
+          console.log(`[DEBUG FAQ] searchFAQTool tidak ditemukan dalam tools`);
         }
+      } else {
+        console.log(`[DEBUG FAQ] AI tidak diaktifkan untuk toko ${storeId} atau terjadi error`);
       }
     } catch (error) {
       console.error("Error searching FAQ:", error);
+      console.error(`[DEBUG FAQ] Detail error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`[DEBUG FAQ] Stack trace: ${error instanceof Error ? error.stack : 'No stack trace'}`);
     }
     
     // Jika FAQ ditemukan, gunakan sebagai konteks untuk AI
@@ -648,7 +720,7 @@ export const getAiResponseWithAgent = async (
             customer_id: customerId,
             direction: 'outgoing',
             content: outputText,
-            message_type: 'ai',
+            message_type: 'assistant',
             ai_response: true,
             created_at: new Date().toISOString()
           }
@@ -675,7 +747,7 @@ export const getAiResponseWithAgent = async (
     }
     return "Maaf, saya tidak dapat memproses permintaan Anda saat ini. Silakan coba lagi nanti.";
   }
-};
+});
 
 // Fungsi untuk membuat respons berdasarkan template
 export const generateResponseFromTemplate = async (

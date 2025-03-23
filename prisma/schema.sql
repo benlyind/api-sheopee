@@ -169,7 +169,7 @@ CREATE TABLE messages (
     customer_id UUID NOT NULL REFERENCES customers(id),
     direction VARCHAR(10) NOT NULL, -- 'incoming' atau 'outgoing'
     content TEXT NOT NULL,
-    message_type VARCHAR(50) DEFAULT 'regular', -- 'regular', 'ai', 'delivery'
+    message_type VARCHAR(50) DEFAULT 'regular', -- 'regular', 'assistant', 'delivery'
     delivery_id UUID REFERENCES auto_deliveries(id), -- Jika pesan ini adalah pengiriman produk
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

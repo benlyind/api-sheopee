@@ -1,73 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { withAuth, AuthenticatedRequest } from '@/middleware/auth';
+import neo4j, { Driver } from "neo4j-driver";
 
-// GET: Mengecek status useAi berdasarkan product_id
+interface Product {
+  use_ai: boolean;
+  last_session_update: number | null;
+}
+
+// GET: Mengecek status use_ai berdasarkan product_id dan last update dari session
 async function checkProductAi(request: AuthenticatedRequest) {
+  let driver: Driver | null = null;
+  
   try {
     // Ambil parameter dari query string
     const searchParams = request.nextUrl.searchParams;
     const productId = searchParams.get('product_id');
-    const variantId = searchParams.get('variant_id');
+    const sessionId = searchParams.get('session_id');
 
-    console.log(`Checking AI status for product_id: ${productId || 'undefined'}, variant_id: ${variantId || 'null'}`);
+    console.log(`Checking AI status for product_id: ${productId || 'undefined'}, session_id: ${sessionId || 'undefined'}`);
 
     // Validasi input
     if (!productId || productId.trim() === '') {
       console.log('Missing or empty product_id parameter');
-      return NextResponse.json({ useAi: null });
+      return NextResponse.json({ 
+        use_ai: false,
+        last_session_update: null 
+      });
     }
 
-    // Cek langsung di tabel product_delivery_config tanpa filter variant_id
-    const { data: allConfigs, error: allConfigsError } = await supabase
-      .from('product_delivery_config')
-      .select('*')
-      .eq('product_id', productId);
-    
-    console.log(`All configs for product ${productId}:`, JSON.stringify(allConfigs));
-    
-    if (allConfigsError) {
-      console.log(`Error fetching all configs: ${allConfigsError.message}`);
+    // Ambil data use_ai langsung dari tabel products
+    const { data, error: productError } = await supabase
+      .from('products')
+      .select('use_ai')
+      .eq('product_id', productId)
+      .maybeSingle();
+
+    if (productError) {
+      console.error('Error fetching product:', productError);
       return NextResponse.json(
-        { error: allConfigsError.message },
+        { error: productError.message },
         { status: 500 }
       );
     }
 
-    // Jika tidak ada konfigurasi yang ditemukan
-    if (!allConfigs || allConfigs.length === 0) {
-      console.log('No delivery config found, returning useAi: false');
-      return NextResponse.json({ useAi: false });
+    // Jika data tidak ditemukan, kembalikan use_ai: false
+    if (!data) {
+      console.log('Product not found');
+      return NextResponse.json({ 
+        use_ai: false,
+        last_session_update: null 
+      });
     }
 
-    // Cari konfigurasi yang sesuai dengan variant_id
-    let config = null;
-    if (variantId) {
-      config = allConfigs.find(c => c.variant_id === variantId);
-    } else {
-      config = allConfigs.find(c => c.variant_id === null);
+    // Inisialisasi response
+    const response: Product = {
+      use_ai: data.use_ai || false,
+      last_session_update: null
+    };
+
+    // Jika use_ai true dan sessionId ada, cari last update dari Neo4j
+    if (data.use_ai && sessionId) {
+      try {
+        // Inisialisasi koneksi Neo4j
+        driver = neo4j.driver(
+          process.env.NEO4J_URI || "neo4j://localhost:7687",
+          neo4j.auth.basic(
+            process.env.NEO4J_USER || "neo4j",
+            process.env.NEO4J_PASSWORD || "password"
+          )
+        );
+
+        const session = driver.session();
+
+        // Query untuk mendapatkan timestamp pesan terakhir berdasarkan sessionId saja
+        const result = await session.run(
+          `
+          MATCH (c:Conversation {sessionId: $sessionId})-[:HAS_MESSAGE]->(m:Message)
+          WITH m.timestamp as lastUpdate
+          WHERE lastUpdate IS NOT NULL
+          RETURN lastUpdate
+          ORDER BY lastUpdate DESC
+          LIMIT 1
+          `,
+          { sessionId }
+        );
+
+        await session.close();
+
+        // Jika ada hasil, ambil timestamp dalam format integer
+        if (result.records.length > 0) {
+          const lastUpdate = result.records[0].get('lastUpdate');
+          if (neo4j.isInt(lastUpdate)) {
+            // Jika timestamp dalam format Neo4j Integer
+            response.last_session_update = lastUpdate.toNumber();
+          } else if (typeof lastUpdate === 'number') {
+            // Jika timestamp sudah dalam format number
+            response.last_session_update = lastUpdate;
+          } else if (lastUpdate instanceof Date || typeof lastUpdate === 'string') {
+            // Jika timestamp dalam format Date atau string
+            const date = new Date(lastUpdate);
+            response.last_session_update = date.getTime();
+          }
+          
+          console.log('Found last update:', response.last_session_update);
+        } else {
+          console.log('No messages found for session:', sessionId);
+        }
+      } catch (neoError) {
+        console.error('Error fetching last session update:', neoError);
+        // Tetap null jika terjadi error
+      }
     }
 
-    // Jika tidak ada konfigurasi yang sesuai, gunakan konfigurasi pertama
-    if (!config && allConfigs.length > 0) {
-      config = allConfigs[0];
-    }
-
-    // Jika masih tidak ada konfigurasi, kembalikan false
-    if (!config) {
-      return NextResponse.json({ useAi: false });
-    }
-
-    console.log(`Selected config:`, JSON.stringify(config));
-    console.log(`Raw use_ai value: ${config.use_ai}, type: ${typeof config.use_ai}`);
-    
-    return NextResponse.json({ useAi: config.use_ai });
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error checking product AI status:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat mengecek status AI produk' },
       { status: 500 }
     );
+  } finally {
+    if (driver) {
+      await driver.close();
+    }
   }
 }
 

@@ -21,6 +21,8 @@ model User {
   stores       Store[]
   subscriptions Subscription[]
   apiKeys      ApiKey[]
+  aiConfigs    AiConfig[]
+  aiTriggers   AiTrigger[]
 
   @@map("users")
 }
@@ -39,7 +41,6 @@ model Store {
   deliveryTemplates   DeliveryTemplate[]
   productDeliveryConfigs ProductDeliveryConfig[]
   aiTriggerConfigs    AiTriggerConfig[]
-  aiConfigs           AiConfig[]
   faqDocuments        FaqDocument[]
   responseTemplates   ResponseTemplate[]
   customers           Customer[]
@@ -102,6 +103,7 @@ model Product {
   storeId           String             @map("store_id") @db.VarChar(100)
   name              String
   description       String?
+  useAi             Boolean            @default(false) @map("use_ai")
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime           @default(now()) @map("updated_at") @db.Timestamptz
   store             Store              @relation(fields: [storeId], references: [id])
@@ -134,7 +136,6 @@ model ProductDeliveryConfig {
   status      String            @default("active")
   accountData String?           @map("account_data")
   templateId  String?           @map("template_id") @db.Uuid
-  useAi       Boolean           @default(false) @map("use_ai")
   createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz
   store       Store             @relation(fields: [storeId], references: [id])
@@ -161,27 +162,36 @@ model AiTriggerConfig {
 
 model AiConfig {
   id            String           @id @default(uuid()) @db.Uuid
-  storeId       String           @map("store_id") @db.VarChar(100)
+  userId        String           @map("user_id") @db.Uuid
   systemPrompt  String           @map("system_prompt")
   customPrompts Json             @map("custom_prompts")
   createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime         @default(now()) @map("updated_at") @db.Timestamptz
-  store         Store            @relation(fields: [storeId], references: [id])
+  user          User             @relation(fields: [userId], references: [id])
   aiTriggers    AiTriggerConfig[]
 
   @@map("ai_config")
 }
 
+model Question {
+  id         String         @id @default(uuid()) @db.Uuid
+  question   String?
+  answer     String?
+  category   String?        @default("150")
+  tag        String[]      @default([]) @db.Text
+  faqDocuments FaqDocument[]
+
+  @@map("question")
+}
+
 model FaqDocument {
-  id        String   @id @default(uuid()) @db.Uuid
-  storeId   String   @map("store_id") @db.VarChar(100)
-  question  String
-  answer    String
-  category  String   @default("general")
-  tags      String[] @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  store     Store    @relation(fields: [storeId], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  storeId    String   @map("store_id") @db.VarChar(100)
+  questionId String   @map("question_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  store      Store    @relation(fields: [storeId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onUpdate: Cascade, onDelete: Cascade)
 
   @@map("faq_documents")
 }
@@ -340,4 +350,15 @@ model SystemLog {
   store       Store    @relation(fields: [storeId], references: [id])
 
   @@map("system_logs")
+}
+
+model AiTrigger {
+  id       BigInt   @id @default(autoincrement())
+  userId   String   @map("user_id") @db.Uuid
+  intent   String?  @map("Intent") @default("") @db.VarChar
+  keywords String[] @map("Keywords") @db.Text
+  template String   @map("Template") @db.Text
+  user     User     @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("ai_trigger")
 }

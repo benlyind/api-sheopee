@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { withAuth, AuthenticatedRequest } from '@/middleware/auth';
-import { getAiResponseWithAgent, analyzeIntentWithLangChain, detectEntities } from '@/lib/ai';
+import { getAiResponseWithAgent, analyzeIntentWithLangChain, detectEntities, getAIConfig } from '@/lib/ai';
+import { createTracingCallbacks } from '@/lib/langchain-tracer';
 
 // POST: Mendapatkan respons AI untuk pesan pengguna
 async function getAIResponse(request: AuthenticatedRequest) {
   try {
     const body = await request.json();
-    const { message, userId, storeId, productId, promptName, humanPrompt } = body;
+    
+    const { message, sessionId, storeId, productId, promptName, humanPrompt } = body;
+    
+    // Gunakan ID pengguna dari token yang sudah diverifikasi
+    const authenticatedUserId = request.user.id;
 
     // Validasi input
     if (!message) {
@@ -17,9 +22,9 @@ async function getAIResponse(request: AuthenticatedRequest) {
       );
     }
 
-    if (!userId) {
+    if (!sessionId) {
       return NextResponse.json(
-        { error: 'Parameter userId diperlukan' },
+        { error: 'Parameter sessionId diperlukan' },
         { status: 400 }
       );
     }
@@ -30,21 +35,42 @@ async function getAIResponse(request: AuthenticatedRequest) {
         { status: 400 }
       );
     }
-
-    // Dapatkan respons AI menggunakan fungsi dari lib/ai.ts
+    
+    // 1. Ambil konfigurasi AI menggunakan ID pengguna yang terautentikasi
+    const config = await getAIConfig(authenticatedUserId);
+    
+    // 2. Dapatkan prompt yang sesuai berdasarkan promptName
+    const PromptName = promptName && config.customPrompts?.[promptName] 
+      ? promptName 
+      : 'default';
+    const prompt = config.customPrompts?.[PromptName] || config.systemPrompt;
+    
+    // Buat tracing callbacks untuk LangSmith
+    const callbacks = createTracingCallbacks(`chat_api_${sessionId}`, {
+      userId: authenticatedUserId,
+      sessionId,
+      storeId,
+      productId,
+      promptName: PromptName,
+      messageType: "user_message",
+      endpoint: "/api/ai/chat"
+    });
+    
+    // 3. Panggil getAiResponseWithAgent dengan parameter yang sesuai
     const response = await getAiResponseWithAgent(
       message,
-      userId,
+      sessionId, // sessionId dari frontend
       storeId,
-      promptName || 'default',
+      PromptName,
       productId,
       undefined, // customerId (opsional)
-      humanPrompt // parameter tambahan untuk human prompt
+      humanPrompt, // parameter tambahan untuk human prompt
+      config // Teruskan konfigurasi AI yang sudah diambil
     );
-
+    
     return NextResponse.json({
       response,
-      sessionId: productId ? `${userId}-${productId}` : userId
+      sessionId: productId ? `${sessionId}-${productId}` : sessionId
     });
   } catch (error) {
     console.error('Error getting AI response:', error);
